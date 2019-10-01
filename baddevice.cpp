@@ -2,9 +2,11 @@
 #include <stdlib.h>
 
 #if defined(WIN32)
-#include <windows.h>
+# include <windows.h>
+  typedef HMODULE Handle_t;
 #else /* defined(WIN32) */
-#include <dlfcn.h>
+# include <dlfcn.h>
+  typedef void * Handle_t;
 #endif /* defined(WIN32) */
 
 enum cudaError_t
@@ -16,7 +18,7 @@ enum cudaError_t
 class CudaRuntime
 {
 private:
-	void * _handle;
+	Handle_t _handle;
 	cudaError_t (* _getDeviceCount)(int * count);
 	cudaError_t (* _setDevice)(int deviceId);
 
@@ -40,7 +42,7 @@ public:
 void * CudaRuntime::findSymbol(const char * function)
 {
 #if defined(WIN32)
-	return GetProcAddress(_handle, function);
+	return (void *) (uintptr_t) GetProcAddress(_handle, function);
 #else /* defined(WIN32) */
 	return dlsym(_handle, function);
 #endif /* defined(WIN32) */
@@ -89,10 +91,11 @@ static const char libraryName[] = "libcudart.so";
 int main(int argc, const char * const * argv)
 {
 	int result = EXIT_FAILURE;
+	const char *libName = argc > 1 ? argv[1] : libraryName;
 	int deviceCount = 0;
 	CudaRuntime runtime;
 
-	if (!runtime.open(libraryName)) {
+	if (!runtime.open(libName)) {
 		printf("Failed to open CUDA runtime\n");
 	} else {
 		cudaError_t error = runtime.getDeviceCount(&deviceCount);

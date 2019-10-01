@@ -1,4 +1,6 @@
 /baddevice
 
+*.dll
 *.exe
 *.o
+*.obj
